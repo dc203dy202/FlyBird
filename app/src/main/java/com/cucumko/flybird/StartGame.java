@@ -3,6 +3,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 public class StartGame extends Activity {
@@ -13,6 +14,8 @@ public class StartGame extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         gameView = new GameView(this);
         setContentView(gameView);
 

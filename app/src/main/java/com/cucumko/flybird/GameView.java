@@ -19,6 +19,8 @@ import android.os.Handler;
 
 public class GameView extends View {
 
+    float scaleX, scaleY;
+
     //this is our custom View class
     Handler handler;    //handler is required to schedule a runnable after some delay
     Runnable runnable;
@@ -30,9 +32,9 @@ public class GameView extends View {
     int dWidth, dHeight; //Device width and height respectively
     Rect rect;
 
-
     //lets create a bitmap array for the bird
     Bitmap birds[];
+//    Bitmap resize_bird[];
     Bitmap numbers[];
     int birdWidth, birdHeight;
     //We need an integer variable to keep track of bird image frame
@@ -70,18 +72,26 @@ public class GameView extends View {
                 invalidate(); //This will call onDraw()
             }
         };
-        background = BitmapFactory.decodeResource(getResources(), R.drawable.background);
-        toptube = BitmapFactory.decodeResource(getResources(), R.drawable.topbuilding);
-        bottomtube = BitmapFactory.decodeResource(getResources(), R.drawable.bottombuilding);
+
+
+
+
+        background = BitmapFactory.decodeResource(getResources(), R.drawable.newbackground);
+        toptube = BitmapFactory.decodeResource(getResources(), R.drawable.newobstacle_top);
+        bottomtube = BitmapFactory.decodeResource(getResources(), R.drawable.newobstacle_bottom);
         display = ((Activity)getContext()).getWindowManager().getDefaultDisplay();
         point = new Point();
         display.getSize(point);
-        dWidth = point.x;
-        dHeight = point.y;
+//        dWidth = point.x;
+//        dHeight = point.y;
+        dWidth = 1080;
+        dHeight = 1920;
         rect = new Rect(0, 0, dWidth, dHeight);
         birds = new Bitmap[2];
-        birds[0] = BitmapFactory.decodeResource(getResources(), R.drawable.newbird1);
-        birds[1] = BitmapFactory.decodeResource(getResources(), R.drawable.newbird2);
+        birds[0] = BitmapFactory.decodeResource(getResources(), R.drawable.wbird1);
+        birds[1] = BitmapFactory.decodeResource(getResources(), R.drawable.wbird2);
+//        resize_bird[0] = Bitmap.createScaledBitmap(birds[0], 34, 24, true);
+//        resize_bird[1] = Bitmap.createScaledBitmap(birds[1], 34, 24, true);
         numbers = new Bitmap[10];
         numbers[0] = BitmapFactory.decodeResource(getResources(), R.drawable.num0);
         numbers[1] = BitmapFactory.decodeResource(getResources(), R.drawable.num1);
@@ -107,11 +117,13 @@ public class GameView extends View {
 
 
 
+
         for(int i = 0; i < numberOfTubes; i++){
             tubeX[i] = dWidth + i * distanceBetweenTubes;
             topTubeY[i] = minTubeOffset + random.nextInt(maxTubeOffset - minTubeOffset + 1); //topTubeY will vary between minTubeOffset and maxTubeOffset
         }
     }
+
 
     @SuppressLint("DrawAllocation")
     @Override
@@ -120,7 +132,16 @@ public class GameView extends View {
         //We'll draw our view inside onDraw()
         //Draw the background on canvas
 //        canvas.drawBitmap(backgroundbackground, 0, 0, null);
+
+        scaleX = getWidth() / 1080f;
+        scaleY = getHeight() / 1920f;
+        canvas.scale(scaleX, scaleY);
+        rect = new Rect(0, 0, 1080, 1920);
+
         canvas.drawBitmap(background, null, rect, null);//fixed
+
+//        drawNumbers((int)(scaleX * 100), 300, 300, canvas);
+
         if(birdFrame == 0){
             birdFrame = 1;
         }
@@ -190,6 +211,7 @@ public class GameView extends View {
         //We want the bird to be displayed at the centre of the screen
         //Both birds[0] and birds[1] have same dimension
         canvas.drawBitmap(birds[birdFrame], birdX, birdY, null);
+//        canvas.drawBitmap(resize_bird[birdFrame], birdX, birdY, null);
 //        Paint paint = new Paint();
 //        paint.setTextSize(50);0]s
 //        paint.setTextAlign(Paint.Align.CENTER);
