@@ -3,12 +3,15 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.support.v4.content.res.ResourcesCompat;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,9 +22,14 @@ import android.os.Handler;
 
 public class GameView extends View {
 
+    final int TUBE_WIDTH = 104;
+    final int TUBE_HEIGHT = 1280;
+
+
     float scaleX, scaleY;
 
     //this is our custom View class
+    Resources resources;
     Handler handler;    //handler is required to schedule a runnable after some delay
     Runnable runnable;
     final int UPDATE_MILLS = 30;
@@ -36,6 +44,19 @@ public class GameView extends View {
     Bitmap birds[];
 //    Bitmap resize_bird[];
     Bitmap numbers[];
+
+    BitmapDrawable bd_toptube;
+    BitmapDrawable bd_bottomtube;
+    BitmapDrawable bd_bird[];
+    Bitmap bit_toptube;
+    Bitmap bit_bottomtube;
+    Bitmap bit_bird[];
+    Rect rect_toptube;
+    Rect rect_bottomtube;
+    Rect rect_bird;
+
+
+
     int birdWidth, birdHeight;
     //We need an integer variable to keep track of bird image frame
     int birdFrame = 0;
@@ -57,14 +78,14 @@ public class GameView extends View {
     boolean toast = false;
     int scoreCheck = 0;
     int score = 0;
-    int difficulty =  5;
+    int difficulty =  8;
     short numSize[] = {0, 0, 0, 0};
-
 
 
 
     public GameView(Context context){
         super(context);
+        resources = getResources();
         handler = new Handler();
         runnable = new Runnable() {
             @Override
@@ -73,19 +94,30 @@ public class GameView extends View {
             }
         };
 
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+//        출처: http://itmining.tistory.com/17 [IT 마이닝]
+
+        final BitmapFactory.Options backgroundOption = new BitmapFactory.Options();
+        backgroundOption.inScaled = false;
 
 
-
-        background = BitmapFactory.decodeResource(getResources(), R.drawable.newbackground);
-        toptube = BitmapFactory.decodeResource(getResources(), R.drawable.newobstacle_top);
-        bottomtube = BitmapFactory.decodeResource(getResources(), R.drawable.newobstacle_bottom);
+        background = BitmapFactory.decodeResource(getResources(), R.drawable.background_1920);
+        toptube = BitmapFactory.decodeResource(getResources(), R.drawable.new_obstacle13_flip);
+        bottomtube = BitmapFactory.decodeResource(getResources(), R.drawable.new_obstacle13);
         display = ((Activity)getContext()).getWindowManager().getDefaultDisplay();
         point = new Point();
         display.getSize(point);
 //        dWidth = point.x;
 //        dHeight = point.y;
+
+        //constant
         dWidth = 1080;
         dHeight = 1920;
+
+
+
+
         rect = new Rect(0, 0, dWidth, dHeight);
         birds = new Bitmap[2];
         birds[0] = BitmapFactory.decodeResource(getResources(), R.drawable.wbird1);
@@ -105,18 +137,32 @@ public class GameView extends View {
         numbers[9] = BitmapFactory.decodeResource(getResources(), R.drawable.num9);
 
 
-        birdWidth = birds[0].getWidth();
-        birdHeight = birds[0].getHeight();
-        birdX = dWidth/2 - birds[0].getWidth()/2; //Initially bird will be on center
-        birdY = dHeight/2 - birds[0].getHeight()/2;
+        birdWidth = 136;
+        birdHeight = 96;
+        birdX = dWidth/2 - birdWidth/2; //Initially bird will be on center
+        birdY = dHeight/2 - birdHeight/2;
         distanceBetweenTubes = dWidth * 3 / 4; //Our assumption
 //        distanceBetweenTubes = toptube.getWidth() * 3;
         minTubeOffset = gap / 2 + dHeight / 7;
         maxTubeOffset = dHeight - minTubeOffset - gap - dHeight / 7;
         random = new Random();
 
+        bd_toptube = (BitmapDrawable)ResourcesCompat.getDrawable(resources, R.drawable.newobstacle_top, null);
+        bd_bottomtube = (BitmapDrawable)ResourcesCompat.getDrawable(resources, R.drawable.newobstacle_bottom, null);
+        bd_bird = new BitmapDrawable[2];
+        bd_bird[0] = (BitmapDrawable)ResourcesCompat.getDrawable(resources, R.drawable.wbird1, null);
+        bd_bird[1] = (BitmapDrawable)ResourcesCompat.getDrawable(resources, R.drawable.wbird2, null);
 
+        bit_toptube = bd_toptube.getBitmap();
+        bit_bottomtube = bd_bottomtube.getBitmap();
+        bit_bird = new Bitmap[2];
+        bit_bird[0] = bd_bird[0].getBitmap();
+        bit_bird[1] = bd_bird[1].getBitmap();
 
+        rect = new Rect(0, 0, 1080, 1920);
+        rect_toptube = new Rect();
+        rect_bottomtube = new Rect();
+        rect_bird = new Rect();
 
         for(int i = 0; i < numberOfTubes; i++){
             tubeX[i] = dWidth + i * distanceBetweenTubes;
@@ -136,7 +182,6 @@ public class GameView extends View {
         scaleX = getWidth() / 1080f;
         scaleY = getHeight() / 1920f;
         canvas.scale(scaleX, scaleY);
-        rect = new Rect(0, 0, 1080, 1920);
 
         canvas.drawBitmap(background, null, rect, null);//fixed
 
@@ -183,7 +228,7 @@ public class GameView extends View {
                     scoreCheck = 0;
                 }
                 tubeX[i] -= tubeVelocity;
-                if(tubeX[i] < -(toptube.getWidth() + toptube.getWidth() / 2)){
+                if(tubeX[i] < -(TUBE_WIDTH + TUBE_WIDTH / 2)){
                     tubeX[i] += numberOfTubes * distanceBetweenTubes;
                     topTubeY[i] = minTubeOffset + random.nextInt(maxTubeOffset - minTubeOffset + 1); //topTubeY will vary between minTubeOffset and maxTubeOffset
                     score++;
@@ -191,13 +236,18 @@ public class GameView extends View {
                     toast = true;
                     scoreCheck = i == 3 ? 0 : i + 1;
                 }
-                canvas.drawBitmap(toptube, tubeX[i], topTubeY[i] - toptube.getHeight(), null);
-                canvas.drawBitmap(bottomtube, tubeX[i], topTubeY[i] + gap, null);
+                rect_toptube.set(tubeX[i], topTubeY[i] - TUBE_HEIGHT, tubeX[i] + TUBE_WIDTH, topTubeY[i] - TUBE_HEIGHT + TUBE_HEIGHT);
+                rect_bottomtube.set(tubeX[i], topTubeY[i] + gap, tubeX[i] + TUBE_WIDTH,topTubeY[i] + gap + TUBE_HEIGHT);
+                canvas.drawBitmap(bit_toptube, null, rect_toptube, null);
+                canvas.drawBitmap(bit_bottomtube, null, rect_bottomtube, null);
+
+//                canvas.drawBitmap(toptube, tubeX[i], topTubeY[i] - toptube.getHeight(), null);
+//                canvas.drawBitmap(bottomtube, tubeX[i], topTubeY[i] + gap, null);
             }
 //            canvas.drawText(String.valueOf(tubeX[scoreCheck]) + ", " + String.valueOf(scoreCheck) + ", " + String.valueOf(birdX + birdWidth), 200, 200, texts);
 
-            if(toast && (((birdX + birdWidth -difficulty) > tubeX[scoreCheck])) && ((birdX + difficulty < (tubeX[scoreCheck] + toptube.getWidth()))) &&
-                    ((birdY + difficulty < topTubeY[scoreCheck]) || ((birdY + birdHeight - difficulty) > (topTubeY[scoreCheck] + gap)))){
+            if(toast && (((birdX + birdWidth -difficulty) > tubeX[scoreCheck])) && ((birdX + difficulty + 10 < (tubeX[scoreCheck] + TUBE_WIDTH))) &&
+                    ((birdY + difficulty + 5 < topTubeY[scoreCheck]) || ((birdY + birdHeight - difficulty) > (topTubeY[scoreCheck] + gap)))){
                 gameState = false;
                 toast = false;
 //                Toast.makeText(getContext(), "Collision", Toast.LENGTH_SHORT).show();
@@ -210,7 +260,10 @@ public class GameView extends View {
 
         //We want the bird to be displayed at the centre of the screen
         //Both birds[0] and birds[1] have same dimension
-        canvas.drawBitmap(birds[birdFrame], birdX, birdY, null);
+        rect_bird.set(birdX, birdY, birdX + birdWidth, birdY + birdHeight);
+        canvas.drawBitmap(bit_bird[birdFrame], null, rect_bird, null);
+
+//        canvas.drawBitmap(birds[birdFrame], birdX, birdY, null);
 //        canvas.drawBitmap(resize_bird[birdFrame], birdX, birdY, null);
 //        Paint paint = new Paint();
 //        paint.setTextSize(50);0]s

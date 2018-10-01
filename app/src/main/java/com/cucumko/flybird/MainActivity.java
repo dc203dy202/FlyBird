@@ -60,6 +60,17 @@ public class MainActivity extends Activity {
         startActivity(intent);
         finish();
     }
+
+    private long eTime = 0;
+    public void eBtnClicked(View v){
+        if(System.currentTimeMillis()-eTime>=2000){
+            eTime = System.currentTimeMillis();
+        }
+        else if(System.currentTimeMillis()-eTime<2000){
+            Toast.makeText(this, "developed by dayeon / drew by woohyuk", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     private long time= 0;
     @Override
     public void onBackPressed(){
